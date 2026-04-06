@@ -1,0 +1,404 @@
+# 🎨 CafeByte Application Structure
+
+## 📱 Application Flow
+
+```
+                    ┌─────────────────────┐
+                    │   Entry Point       │
+                    │   /login            │
+                    └──────────┬──────────┘
+                               │
+                ┌──────────────┴──────────────┐
+                │                             │
+         ┌──────▼──────┐             ┌───────▼──────┐
+         │  User App    │             │  Admin App   │
+         │  /           │             │  /admin      │
+         └──────┬───────┘             └───────┬──────┘
+                │                             │
+    ┌───────────┴───────────┐    ┌───────────┴────────────┐
+    │                       │    │                        │
+┌───▼────┐  ┌────────┐  ┌──▼──┐ │  ┌──────┐  ┌──────┐  ┌────────┐
+│ Home   │  │ Menu   │  │Cart │ │  │ Menu │  │Orders│  │Coupons │
+│ (AI)   │  │(Search)│  │     │ │  │(CRUD)│  │(Mgmt)│  │ (Mgmt) │
+└────────┘  └────────┘  └─────┘ │  └──────┘  └──────┘  └────────┘
+    │           │           │    │     │         │          │
+    └───────────┴───────────┘    └─────┴─────────┴──────────┘
+                │                            │
+         ┌──────▼──────┐            ┌────────▼────────┐
+         │   Orders    │            │   Dashboard     │
+         │  (Tracking) │            │   (Analytics)   │
+         └─────────────┘            └─────────────────┘
+```
+
+---
+
+## 🗂️ Component Hierarchy
+
+```
+App.tsx (Root)
+├── ThemeProvider (Context)
+├── AuthProvider (Context)
+└── CartProvider (Context)
+    └── RouterProvider
+        ├── UserApp
+        │   ├── UserNavbar
+        │   │   ├── Home
+        │   │   ├── Menu
+        │   │   ├── Cart
+        │   │   ├── Profile
+        │   │   └── Theme Toggle
+        │   └── Outlet
+        │       ├── Home
+        │       │   ├── AI Search (BYTE)
+        │       │   ├── Recommendations
+        │       │   └── Category Buttons
+        │       ├── Menu
+        │       │   ├── Search Bar
+        │       │   ├── Filters
+        │       │   └── MenuItemCard[]
+        │       ├── Cart
+        │       │   ├── Cart Items
+        │       │   ├── Coupon Input
+        │       │   └── Order Summary
+        │       ├── Orders
+        │       │   ├── Order List
+        │       │   └── Invoice Download
+        │       └── Profile
+        │           ├── User Info
+        │           └── Stats
+        │
+        ├── AdminApp
+        │   ├── AdminNavbar
+        │   └── Outlet
+        │       ├── Dashboard
+        │       │   ├── Stats Cards
+        │       │   ├── Recent Orders
+        │       │   └── Quick Actions
+        │       ├── AdminMenu
+        │       │   ├── Menu Table
+        │       │   └── CRUD Actions
+        │       ├── AdminOrders
+        │       │   ├── Status Filters
+        │       │   └── Status Update
+        │       ├── AdminUsers
+        │       │   └── User Cards
+        │       └── AdminCoupons
+        │           └── Coupon Cards
+        │
+        └── Auth Routes
+            ├── Login
+            └── Register
+```
+
+---
+
+## 🎯 Data Flow
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    User Action                       │
+└─────────────────┬───────────────────────────────────┘
+                  │
+      ┌───────────┴───────────┐
+      │                       │
+┌─────▼──────┐        ┌───────▼────────┐
+│   UI Event │        │  Context API    │
+│  (onClick) │        │  (State Mgmt)   │
+└─────┬──────┘        └───────┬─────────┘
+      │                       │
+      │               ┌───────▼────────┐
+      │               │  Cart Context   │
+      │               │  Auth Context   │
+      │               │  Theme Context  │
+      │               └───────┬─────────┘
+      │                       │
+      └───────────┬───────────┘
+                  │
+      ┌───────────▼───────────┐
+      │   localStorage        │
+      │   (Persistence)       │
+      └───────────┬───────────┘
+                  │
+      ┌───────────▼───────────┐
+      │   UI Update           │
+      │   (Re-render)         │
+      └───────────────────────┘
+```
+
+---
+
+## 🤖 BYTE AI Flow
+
+```
+User Input
+    │
+    ▼
+"cheap spicy coffee"
+    │
+    ▼
+┌─────────────────────┐
+│ ByteAI.getRecommend │
+│     ations()        │
+└─────────┬───────────┘
+          │
+    ┌─────┴──────┐
+    │   Parse    │
+    │  Keywords  │
+    └─────┬──────┘
+          │
+    ┌─────▼──────────────────┐
+    │  Match Algorithm       │
+    │  - cheap  → price<150  │
+    │  - spicy  → isSpicy    │
+    │  - coffee → tags       │
+    └─────┬──────────────────┘
+          │
+    ┌─────▼──────┐
+    │   Filter   │
+    │   Items    │
+    └─────┬──────┘
+          │
+    ┌─────▼──────┐
+    │   Return   │
+    │  + Reason  │
+    └────────────┘
+```
+
+---
+
+## 🛒 Order Lifecycle
+
+```
+1. User Browses Menu
+         │
+         ▼
+2. Adds Items to Cart
+    │    │    │
+    ▼    ▼    ▼
+[Item 1][Item 2][Item 3]
+         │
+         ▼
+3. Applies Coupon (optional)
+         │
+         ▼
+4. Reviews Cart Summary
+    Total: ₹500
+    Discount: -₹100
+    Final: ₹400
+         │
+         ▼
+5. Clicks Checkout
+         │
+         ▼
+6. Login Check
+    ┌────┴────┐
+    │         │
+Not Logged  Logged In
+    │         │
+Login Page   │
+    │         │
+    └────┬────┘
+         │
+         ▼
+7. Place Order
+    {
+      status: "pending",
+      items: [...],
+      total: 400
+    }
+         │
+         ▼
+8. Admin Updates Status
+    pending → confirmed → preparing → ready → delivered
+         │                                        │
+         ▼                                        ▼
+9. User Tracks Order              10. Download Invoice
+    [Progress Bar: 75%]                [PDF Generated]
+```
+
+---
+
+## 🔐 Authentication Flow
+
+```
+┌──────────────┐
+│ Login Page   │
+└──────┬───────┘
+       │
+   ┌───▼───┐
+   │ Email │
+   │  +    │
+   │ Pass  │
+   └───┬───┘
+       │
+   ┌───▼────────┐
+   │ Auth Check │
+   └───┬────────┘
+       │
+   ┌───▼───────────────┐
+   │ Create User Object│
+   │  - id             │
+   │  - email          │
+   │  - role           │
+   └───┬───────────────┘
+       │
+   ┌───▼────────────┐
+   │ Save to        │
+   │ localStorage   │
+   └───┬────────────┘
+       │
+   ┌───▼────────┐
+   │ Set Context│
+   └───┬────────┘
+       │
+   ┌───▼────────┐
+   │ Redirect   │
+   │ to App     │
+   └────────────┘
+```
+
+---
+
+## 📊 State Management
+
+```
+┌─────────────────────────────────────────┐
+│          Context Providers              │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌───────────────┐  ┌──────────────┐  │
+│  │ ThemeContext  │  │ AuthContext  │  │
+│  │ - theme       │  │ - user       │  │
+│  │ - toggleTheme │  │ - login()    │  │
+│  └───────────────┘  │ - logout()   │  │
+│                     └──────────────┘  │
+│                                        │
+│  ┌────────────────────────────────┐   │
+│  │      CartContext               │   │
+│  │ - cart[]                       │   │
+│  │ - addToCart()                  │   │
+│  │ - removeFromCart()             │   │
+│  │ - updateQuantity()             │   │
+│  │ - clearCart()                  │   │
+│  │ - cartTotal                    │   │
+│  │ - cartCount                    │   │
+│  └────────────────────────────────┘   │
+│                                        │
+└────────────────────────────────────────┘
+                  │
+                  ▼
+         All Child Components
+         Can Access This State
+```
+
+---
+
+## 🎨 UI Component Layers
+
+```
+Layer 1: Layout Components
+    ├── UserApp
+    ├── AdminApp
+    ├── UserNavbar
+    └── AdminNavbar
+
+Layer 2: Page Components
+    ├── Home
+    ├── Menu
+    ├── Cart
+    ├── Orders
+    ├── Profile
+    ├── AdminDashboard
+    └── AdminMenu
+
+Layer 3: Feature Components
+    ├── MenuItemCard
+    ├── AISearch (BYTE)
+    ├── OrderCard
+    └── CouponCard
+
+Layer 4: UI Components (Shared)
+    ├── Button
+    ├── Input
+    ├── Dialog
+    └── Toast
+```
+
+---
+
+## 🔄 Real-time Updates (Future)
+
+```
+Current (LocalStorage):
+    User Action → Update State → Save to localStorage
+
+With Firebase:
+    User Action
+         │
+         ▼
+    Update Firestore
+         │
+         ▼
+    Firestore Triggers
+         │
+         ▼
+    All Clients Updated (Real-time)
+         │
+         ▼
+    Admin sees order immediately
+```
+
+---
+
+## 📱 Responsive Layout
+
+```
+Mobile (< 768px):
+┌──────────────────┐
+│    Navbar        │
+├──────────────────┤
+│                  │
+│    Content       │
+│   (Stacked)      │
+│                  │
+├──────────────────┤
+│   Bottom Nav     │
+└──────────────────┘
+
+Desktop (> 1024px):
+┌─────────────────────────────┐
+│         Top Navbar          │
+├────┬────────────────────┬───┤
+│    │                    │   │
+│Side│     Content        │Ads│
+│bar │   (Grid/Flex)      │   │
+│    │                    │   │
+└────┴────────────────────┴───┘
+```
+
+---
+
+## 🎯 Key Files Reference
+
+```
+src/app/
+├── App.tsx                 → Root, Providers, Router
+├── routes.tsx              → All route definitions
+├── types/index.ts          → TypeScript interfaces
+├── context/
+│   ├── AuthContext.tsx     → User authentication
+│   ├── CartContext.tsx     → Shopping cart
+│   └── ThemeContext.tsx    → Dark/light mode
+├── services/
+│   └── byteAI.ts          → AI recommendation engine
+├── data/
+│   └── mockData.ts        → Menu items, coupons
+└── components/
+    ├── user/              → Customer-facing UI
+    ├── admin/             → Admin dashboard
+    └── auth/              → Login/Register
+```
+
+---
+
+**🎉 Visual guide complete! This should help you understand the entire application structure at a glance.**
